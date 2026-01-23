@@ -1,0 +1,63 @@
+name: Daily Stock Data Update
+
+on:
+  # Run every weekday at 6:00 PM ET (after market close at 4:00 PM ET)
+  # 6:00 PM ET = 11:00 PM UTC (during standard time) or 10:00 PM UTC (during daylight time)
+  # Using 23:00 UTC to be safe for both
+  schedule:
+    - cron: '0 23 * * 1-5'  # Monday-Friday at 11:00 PM UTC
+  
+  # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+    inputs:
+      delay:
+        description: 'Delay between API calls (seconds)'
+        required: false
+        default: '1.5'
+      batch_size:
+        description: 'Batch size for progress checkpoints'
+        required: false
+        default: '100'
+
+jobs:
+  update-stock-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360  # 6 hours max (for large ticker lists)
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run stock data loader
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TICKERS_CSV: ${{ secrets.TICKERS_CSV || 'tickers.csv' }}
+        run: |
+          python stock_data_loader.py
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stock-loader-logs-${{ github.run_number }}
+          path: stock_loader.log
+          retention-days: 30
+      
+      - name: Send failure notification
+        if: failure()
+        run: |
+          echo "Stock data update failed. Check the logs in the Actions tab."
+          echo "Run number: ${{ github.run_number }}"
+          echo "Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
