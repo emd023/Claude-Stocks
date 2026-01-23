@@ -45,7 +45,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           TICKERS_CSV: ${{ secrets.TICKERS_CSV || 'tickers.csv' }}
         run: |
-          python stock_data_loader.py
+          python stock_data_loader_fast.py
       
       - name: Upload logs
         if: always()
