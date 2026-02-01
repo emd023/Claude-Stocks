@@ -264,3 +264,5 @@ For issues:
 - [yfinance](https://github.com/ranaroussi/yfinance) for free stock data
 - [Supabase](https://supabase.com) for free PostgreSQL hosting
 - Yahoo Finance for market data
+
+- 
