@@ -473,6 +473,17 @@ def main():
     
     logger.info(f"Data loading complete: {total_records} total records upserted")
     
+    # Calculate percent changes for loaded data
+    if total_records > 0:
+        logger.info("Calculating percent changes (1D, 3D, 7D, 1M)...")
+        try:
+            # Call the SQL function to calculate percent changes
+            client.rpc('calculate_percent_changes').execute()
+            logger.info("✅ Percent changes calculated")
+        except Exception as e:
+            logger.warning(f"Could not calculate percent changes: {e}")
+            logger.info("Make sure you've run the SQL migration (add_percent_change_columns.sql)")
+    
     # Calculate movers if we got data
     if total_records > 0:
         calculate_daily_movers(client, target_date)
